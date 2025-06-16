@@ -43,20 +43,4 @@ This project allows mass email sending through a web form created with Astro, ma
 
 ---
 
-## Estructura del Proyecto / Project Structure
-email-sender/
-├── src/
-├── test/
-├── node_modules/
-├── package.json
-├── wrangler.toml
-├── tsconfig.json
-├── pnpm-lock.yaml
-├── README.md
-
-## Instalación del proyecto / Project Installation
-git clone <url-del-repositorio> (revisas el repo puedes clonar via ssh o https)
-cd email-sender
-pnpm install
-
 
