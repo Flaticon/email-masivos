@@ -1,7 +1,7 @@
 # EMAIL SENDER: Hono + Astro + Sendgrid + Cloudflare D1
 
-#Descripción
-#Est proyecto permite enviar correos masivos a través de un formulario web creado con Astro, gestionado por una API
+##Descripción
+Este proyecto permite enviar correos masivos a través de un formulario web creado con Astro, gestionado por una API
 rápida usando el framework backend Hono sobre Cloudflare Workers. Los correos se envían usando SenGrid y los registros de envío se almacenan en Cloudflare D1.
 
 ## Índice / Table of Contents
