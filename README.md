@@ -42,11 +42,11 @@ email-sender/
 │ │ └── components/ # Componentes UI
 │ └── package.json
 └── README.md # Este archivo
-
+```
 
 ## 🛠 Configuración Inicial (PNPM)
 
-```bash
+
 # 1. Clonar repositorio 
 git clone https://github.com/Flaticon/email-sender.git
 cd email-sender
