@@ -82,7 +82,7 @@ cd ../astro-frontend
 pnpm build
 pnpm deploy
 
-##📊 Monitoreo
+#Monitoreo
 
 # Ver logs en tiempo real
 pnpm dlx wrangler tail --env production
