@@ -3,6 +3,10 @@ import { Bindings } from './types';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
+app.get('/', (c) => {
+  return c.text('Servidor funcionando correctamente 🚀');
+});
+
 app.post('/send', async (c) => {
   const { DB, SENDGRID_API_KEY, SENDER_EMAIL, API_KEY } = c.env;
 
