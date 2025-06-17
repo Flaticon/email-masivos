@@ -1,48 +1,65 @@
-// src/index.ts
-import { Hono } from 'hono'
+import { Hono } from 'hono';
+import { Bindings } from './types';
 
-const app = new Hono()
+const app = new Hono<{ Bindings: Bindings }>();
 
-// Ruta de prueba
-app.get('/', (c) => {
-  return c.text('Servidor funcionando correctamente 🚀')
-})
+app.post('/send', async (c) => {
+  const { DB, SENDGRID_API_KEY, SENDER_EMAIL, API_KEY } = c.env;
 
-// Ruta para enviar correos
-app.post('/send-email', async (c) => {
-  const { emails, subject, content } = await c.req.json()
+  // Seguridad: verificación con API Key
+  const authHeader = c.req.header('Authorization');
+  console.log('Header recibido:', authHeader);
+  console.log('API_KEY esperada:', API_KEY);
 
-  // Limitar a 150 correos
-  if (!Array.isArray(emails) || emails.length === 0 || emails.length > 100) {
-    return c.json({ error: 'Debe enviar entre 1 y 150 correos.' }, 400)
+  if (authHeader !== `Bearer ${API_KEY}`) {
+    return c.json({ error: 'No autorizado' }, 401);
   }
 
-  const apiKey = c.env.SENDGRID_API_KEY
+  // Capturar el email del body
+  const { email } = await c.req.json();
+  if (!email) {
+    return c.json({ error: 'Email requerido' }, 400);
+  }
 
+  // Guardar en la base de datos
+  await DB.prepare('INSERT INTO email (email) VALUES (?)').bind(email).run();
+
+  // Enviar correo con SendGrid
   const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
+      Authorization: `Bearer ${SENDGRID_API_KEY}`,
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      personalizations: [
-        {
-          to: emails.map(email => ({ email }))
-        }
-      ],
-      from: { email: 'proyectos@acarquitectos.com' }, // Cambia si deseas otro remitente
-      subject: subject,
-      content: [{ type: 'text/plain', value: content }]
-    })
-  })
+      personalizations: [{ to: [{ email }] }],
+      from: { email: SENDER_EMAIL },
+      subject: 'Correo de prueba',
+      content: [{ type: 'text/plain', value: '¡Hola! Este es un correo enviado desde Cloudflare Workers con Hono y SendGrid.' }],
+    }),
+  });
 
-  if (response.ok) {
-    return c.json({ message: 'Correos enviados exitosamente.' })
-  } else {
-    const error = await response.text()
-    return c.json({ error: 'Error al enviar correos.', detalle: error }, 500)
+  if (!response.ok) {
+    return c.json({ error: 'Error al enviar el correo' }, 500);
   }
-})
 
-export default app
+  return c.json({ message: 'Correo enviado exitosamente' });
+});
+
+export default app;
+
+
+app.get('/emails', async (c) => {
+  const { DB, API_KEY } = c.env;
+
+  // Seguridad: verificación con API Key
+  const authHeader = c.req.header('Authorization');
+  if (authHeader !== `Bearer ${API_KEY}`) {
+    return c.json({ error: 'No autorizado' }, 401);
+  }
+
+  // Consultar todos los correos
+  const { results } = await DB.prepare('SELECT * FROM email ORDER BY sent_at DESC').all();
+
+  return c.json(results);
+});

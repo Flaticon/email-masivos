@@ -4,3 +4,10 @@ compatibility_date = "2024-06-13"
 
 [vars]
 SENDGRID_API_KEY = "mlsn.88efce619bd1e8983f13160f5adc8654a5ce0f9d7c4b86192041bda5b2fb29f0"
+SENDER_EMAIL = "tu_correo@dominio.com"
+API_KEY = "123456"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "db-correos-ac"
+database_id = "ee138b48-d943-4846-ba3f-e9b3f53eb728"
