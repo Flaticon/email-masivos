@@ -1,0 +1,27 @@
+{
+  "name": "email-masivos",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:ui": "vitest --ui",
+    "coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "hono": "^4.7.11"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.38",
+    "@cloudflare/workers-types": "^4.20240416.0",
+    "@vitest/runner": "3.2.0",
+    "@vitest/snapshot": "3.2.0",
+    "typescript": "^5.4.5",
+    "vitest": "3.2.0",
+    "vitest-fetch-mock": "^0.4.5",
+    "wrangler": "^4.20.0"
+  },
+  "packageManager": "pnpm@10.11.1"
+}
