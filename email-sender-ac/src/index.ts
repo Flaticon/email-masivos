@@ -3,30 +3,45 @@ import { Bindings } from './types';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
+// Middleware para autenticación
+const authMiddleware = async (c, next) => {
+  const authHeader = c.req.header('Authorization');
+  if (authHeader !== `Bearer ${c.env.API_KEY}`) {
+    return c.json({ error: 'No autorizado' }, 401);
+  }
+  await next();
+};
+
+// Validación de formato de email
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 app.get('/', (c) => {
   return c.text('Servidor funcionando correctamente 🚀');
 });
 
-app.post('/send', async (c) => {
-  const { DB, SENGRID_API_KEY, SENDER_EMAIL, API_KEY } = c.env;
+app.post('/send', authMiddleware, async (c) => {
+  const { DB, SENGRID_API_KEY, SENDER_EMAIL } = c.env;
 
-  // Seguridad: verificación con API Key
-  const authHeader = c.req.header('Authorization');
-  console.log('Header recibido:', authHeader);
-  console.log('API_KEY esperada:', API_KEY);
+  // Capturar emails desde el body (ahora se aceptan múltiples)
+  const { emails } = await c.req.json();
 
-  if (authHeader !== `Bearer ${API_KEY}`) {
-    return c.json({ error: 'No autorizado' }, 401);
+  if (!emails || !Array.isArray(emails) || emails.length === 0) {
+    return c.json({ error: 'Debe proporcionar al menos un email' }, 400);
   }
 
-  // Capturar el email del body
-  const { email } = await c.req.json();
-  if (!email) {
-    return c.json({ error: 'Email requerido' }, 400);
+  if (emails.length > 150) {
+    return c.json({ error: 'No se pueden enviar más de 150 correos a la vez' }, 400);
   }
 
-  // Guardar en la base de datos
-  await DB.prepare('INSERT INTO email (email) VALUES (?)').bind(email).run();
+  // Validar formato de emails
+  if (!emails.every(email => emailRegex.test(email))) {
+    return c.json({ error: 'Uno o más correos no tienen un formato válido' }, 400);
+  }
+
+  // Guardar cada email en la base de datos
+  for (const email of emails) {
+    await DB.prepare('INSERT INTO email (email) VALUES (?)').bind(email).run();
+  }
 
   // Enviar correo con SendGrid
   const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -36,7 +51,9 @@ app.post('/send', async (c) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      personalizations: [{ to: [{ email }] }],
+      personalizations: [
+        { to: emails.map(email => ({ email })) }
+      ],
       from: { email: SENDER_EMAIL },
       subject: 'Correo de prueba',
       content: [{ type: 'text/plain', value: '¡Hola! Este es un correo enviado desde Cloudflare Workers con Hono y SendGrid.' }],
@@ -44,26 +61,20 @@ app.post('/send', async (c) => {
   });
 
   if (!response.ok) {
-    return c.json({ error: 'Error al enviar el correo' }, 500);
+    const errorDetail = await response.text();
+    return c.json({ error: 'Error al enviar el correo', detalle: errorDetail }, 500);
   }
 
-  return c.json({ message: 'Correo enviado exitosamente' });
+  return c.json({ message: 'Correos enviados exitosamente' });
 });
 
-export default app;
-
-
-app.get('/emails', async (c) => {
-  const { DB, API_KEY } = c.env;
-
-  // Seguridad: verificación con API Key
-  const authHeader = c.req.header('Authorization');
-  if (authHeader !== `Bearer ${API_KEY}`) {
-    return c.json({ error: 'No autorizado' }, 401);
-  }
+app.get('/emails', authMiddleware, async (c) => {
+  const { DB } = c.env;
 
   // Consultar todos los correos
   const { results } = await DB.prepare('SELECT * FROM email ORDER BY sent_at DESC').all();
 
   return c.json(results);
 });
+
+export default app;
