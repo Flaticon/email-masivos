@@ -3,7 +3,6 @@ main = "src/index.ts"
 compatibility_date = "2024-06-13"
 
 [vars]
-SENDGRID_API_KEY = "mlsn.88efce619bd1e8983f13160f5adc8654a5ce0f9d7c4b86192041bda5b2fb29f0"
 SENDER_EMAIL = "proyectos@acarquitectos.com"
 API_KEY = "123456"
 

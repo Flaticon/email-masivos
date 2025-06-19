@@ -8,7 +8,7 @@ app.get('/', (c) => {
 });
 
 app.post('/send', async (c) => {
-  const { DB, SENDGRID_API_KEY, SENDER_EMAIL, API_KEY } = c.env;
+  const { DB, SENGRID_API_KEY, SENDER_EMAIL, API_KEY } = c.env;
 
   // Seguridad: verificación con API Key
   const authHeader = c.req.header('Authorization');
@@ -32,7 +32,7 @@ app.post('/send', async (c) => {
   const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${SENDGRID_API_KEY}`,
+      Authorization: `Bearer ${SENGRID_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
