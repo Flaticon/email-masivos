@@ -79,7 +79,7 @@ app.post('/send', authMiddleware, async (c) => {
 
   // Actualizar estado a 'sent'
   for (const email of emails) {
-    await DB.prepare('UPDATE email_logs SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ?')
+    await DB.prepare('UPDATE email_logs SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ? AND subject = ?')
       .bind('sent', email)
       .run();
   }
