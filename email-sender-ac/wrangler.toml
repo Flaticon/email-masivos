@@ -3,7 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2024-06-13"
 
 [vars]
-SENDER_EMAIL = "rgc00023@gmail.com"
+SENDER_EMAIL = "rgonzalez@globalingenieros.com"
 API_KEY = "123456"
 
 
