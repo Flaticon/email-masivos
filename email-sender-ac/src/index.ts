@@ -20,7 +20,7 @@ app.get('/', (c) => {
 });
 
 app.post('/send', authMiddleware, async (c) => {
-  const { DB, SENGRID_API_KEY, SENDER_EMAIL } = c.env;
+  const { DB, SENDGRID_API_KEY, SENDER_EMAIL } = c.env;
 
   // Capturar emails, subject y content desde el body
   const { emails, subject, content } = await c.req.json();
@@ -49,11 +49,11 @@ app.post('/send', authMiddleware, async (c) => {
       .run();
   }
 
-  // Enviar correo con SendGrid
+  
   const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${SENGRID_API_KEY}`,
+      Authorization: `Bearer ${SENDGRID_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -80,8 +80,8 @@ app.post('/send', authMiddleware, async (c) => {
   // Actualizar estado a 'sent'
   for (const email of emails) {
     await DB.prepare('UPDATE email_logs SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ? AND subject = ?')
-      .bind('sent', email)
-      .run();
+    .bind('sent', email, subject)
+    .run();
   }
 
   return c.json({ message: 'Correos enviados exitosamente', detalle: detail });
