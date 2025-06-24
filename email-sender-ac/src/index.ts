@@ -22,8 +22,15 @@ app.get('/', (c) => {
 app.post('/send', authMiddleware, async (c) => {
   const { DB, SENDGRID_API_KEY, SENDER_EMAIL } = c.env;
 
-  // Capturar emails, subject y content desde el body
-  const { emails, subject, content } = await c.req.json();
+  // Manejo seguro del cuerpo de la solicitud
+  let body;
+  try {
+    body = await c.req.json();
+  } catch (err) {
+    return c.json({ error: 'El cuerpo de la solicitud no es un JSON válido.' }, 400);
+  }
+
+  const { emails, subject, content } = body;
 
   if (!emails || !Array.isArray(emails) || emails.length === 0) {
     return c.json({ error: 'Debe proporcionar al menos un email' }, 400);
@@ -37,7 +44,6 @@ app.post('/send', authMiddleware, async (c) => {
     return c.json({ error: 'El subject y el content son requeridos' }, 400);
   }
 
-  // Validar formato de emails
   if (!emails.every(email => emailRegex.test(email))) {
     return c.json({ error: 'Uno o más correos no tienen un formato válido' }, 400);
   }
@@ -49,24 +55,39 @@ app.post('/send', authMiddleware, async (c) => {
       .run();
   }
 
-  
-  const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${SENDGRID_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      personalizations: [
-        { to: emails.map(email => ({ email })) }
-      ],
-      from: { email: SENDER_EMAIL },
-      subject: subject,
-      content: [{ type: 'text/plain', value: content }],
-    }),
-  });
+  // Intentar enviar los correos
+  let response;
+  try {
+    response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${SENDGRID_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        personalizations: [{ to: emails.map(email => ({ email })) }],
+        from: { email: SENDER_EMAIL },
+        subject: subject,
+        content: [{ type: 'text/plain', value: content }],
+      }),
+    });
+  } catch (err) {
+    // Si hay error de conexión con SendGrid
+    for (const email of emails) {
+      await DB.prepare('UPDATE email_logs SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ?')
+        .bind('error', email)
+        .run();
+    }
+    return c.json({ error: 'Error de conexión con SendGrid', detalle: err.message }, 500);
+  }
 
-  const detail = await response.text();
+  let detail;
+  try {
+    detail = await response.json();
+  } catch {
+    detail = await response.text();
+  }
+
   if (!response.ok) {
     // Actualizar estado a 'error'
     for (const email of emails) {
@@ -80,17 +101,20 @@ app.post('/send', authMiddleware, async (c) => {
   // Actualizar estado a 'sent'
   for (const email of emails) {
     await DB.prepare('UPDATE email_logs SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ? AND subject = ?')
-    .bind('sent', email, subject)
-    .run();
+      .bind('sent', email, subject)
+      .run();
   }
 
-  return c.json({ message: 'Correos enviados exitosamente', detalle: detail });
+  return c.json({
+    message: 'Correos enviados exitosamente',
+    detalle: detail,
+    enviados: emails
+  });
 });
 
 app.get('/emails', authMiddleware, async (c) => {
   const { DB } = c.env;
 
-  // Consultar todos los correos registrados
   const { results } = await DB.prepare('SELECT * FROM email_logs ORDER BY created_at DESC').all();
 
   return c.json(results);
