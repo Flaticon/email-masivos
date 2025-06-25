@@ -16,12 +16,12 @@ const authMiddleware = async (c, next) => {
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 app.get('/', (c) => {
-  console.log('Clave SendGrid:', c.env.SENDGRID_API_KEY);
+  console.log('Clave RESEND:', c.env.RESEND_API_KEY);
   return c.text('Servidor funcionando correctamente 🚀');
 });
 
 app.post('/send', authMiddleware, async (c) => {
-  const { DB, SENDGRID_API_KEY, SENDER_EMAIL } = c.env;
+  const { DB, RESEND_API_KEY, SENDER_EMAIL } = c.env;
 
   // Manejo seguro del cuerpo de la solicitud
   let body;
@@ -59,18 +59,18 @@ app.post('/send', authMiddleware, async (c) => {
   // Intentar enviar los correos
   let response;
   try {
-    response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${SENDGRID_API_KEY}`,
+        Authorization: `Bearer ${c.env.RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        personalizations: [{ to: emails.map(email => ({ email })) }],
-        from: { email: SENDER_EMAIL },
-        subject: subject,
-        content: [{ type: 'text/plain', value: content }],
-      }),
+      from: SENDER_EMAIL,
+      to: emails, // puede ser string o array
+      subject: subject,
+      html: `<p>${content}</p>`
+    }),
     });
   } catch (err) {
     // Si hay error de conexión con SendGrid

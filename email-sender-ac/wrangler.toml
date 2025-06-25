@@ -3,9 +3,8 @@ main = "src/index.ts"
 compatibility_date = "2024-06-13"
 
 [vars]
-SENDER_EMAIL = "sandbox@sendgrid.net"
+SENDER_EMAIL = "onboarding@resend.dev" 
 API_KEY = "123456"
-
 
 [[d1_databases]]
 binding = "DB"
