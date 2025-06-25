@@ -20,6 +20,7 @@ app.get('/', (c) => {
   return c.text('Servidor funcionando correctamente 🚀');
 });
 
+
 app.post('/send', authMiddleware, async (c) => {
   const { DB, RESEND_API_KEY, SENDER_EMAIL } = c.env;
 
@@ -71,9 +72,9 @@ app.post('/send', authMiddleware, async (c) => {
       subject: subject,
       html: `<p>${content}</p>`
     }),
-    });
+  });
   } catch (err) {
-    // Si hay error de conexión con SendGrid
+    // Si hay error de conexión con RESEND
     for (const email of emails) {
       await DB.prepare('UPDATE email_logs SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ?')
         .bind('error', email)
