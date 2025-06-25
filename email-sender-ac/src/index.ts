@@ -16,6 +16,7 @@ const authMiddleware = async (c, next) => {
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 app.get('/', (c) => {
+  console.log('Clave SendGrid:', c.env.SENDGRID_API_KEY);
   return c.text('Servidor funcionando correctamente 🚀');
 });
 
