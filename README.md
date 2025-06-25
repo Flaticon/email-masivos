@@ -1,4 +1,4 @@
-# EMAIL SENDER: Hono + Astro + Sendgrid + Cloudflare D1
+# EMAIL SENDER: Hono + Astro + Resend+ Cloudflare D1
 
 
 ## Descripción / Description
